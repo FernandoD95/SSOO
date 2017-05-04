@@ -14,6 +14,8 @@
 #include "minishell_input.h"
 
 void show_command(command * p_cmd);
+void Ejecutar_Comando(command * p_cmd);
+
 
 int main (int argc, char *argv[])
 {
@@ -33,12 +35,15 @@ int main (int argc, char *argv[])
         {
             break;
         }
-
+        
         n_cmds = parse_commands(&cmds, raw_command); 
-
+        
         for (i = 0; i < n_cmds; i++)
         {
-            show_command(&cmds[i]);
+            //printf("%s\n",cmds[i].raw_command);
+            //show_command(&cmds[i]);
+            Ejecutar_Comando(&cmds[i]);
+            
         }
 
         free_commands(cmds, n_cmds); 
@@ -72,4 +77,39 @@ void show_command(command * p_cmd)
 
     printf ("\tExecute in the background: %s\n",
             p_cmd->background ? "Yes" : "No");
+}
+
+
+void Ejecutar_Comando(command * p_cmd){
+    pid_t ident, pid;
+    int status;
+    //printf("%s\n",p_cmd->argv[0]);
+    ident = fork();
+    if(0==strcmp(p_cmd->argv[0],"exit")){
+        exit(EXIT_SUCCESS);
+    }
+    
+    switch(ident){
+        case -1:
+            exit(EXIT_FAILURE);
+        
+        case 0:
+        if (execvp(p_cmd->argv[0], p_cmd->argv) < 0)
+            //if (execl("/bin/ls", "ls", "-a", NULL) < 0)
+            perror("HIJO: Error al ejecutar execvp \n");
+	        exit(EXIT_FAILURE);
+        
+        default:
+            pid=wait(&status);
+            if (pid == -1)
+			{
+				perror("PADRE: Se ha producido un error \n");
+				exit(EXIT_FAILURE);
+			}
+			//else if (pid == ident)                 
+			    //printf("PADRE: El hijo ha finalizado \n"); 
+        
+    }
+
+   
 }
